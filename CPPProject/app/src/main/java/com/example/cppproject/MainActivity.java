@@ -89,7 +89,7 @@ public class MainActivity extends Activity {
             public void afterTextChanged(Editable s) {
                 String t = s.toString();
                 if(t.trim() != "" && t.trim() != null)
-                    getFriends(t);
+                    getWords(t);
                 else{
                     btn1.setVisibility(View.INVISIBLE);
                     btn2.setVisibility(View.INVISIBLE);
@@ -194,7 +194,7 @@ public class MainActivity extends Activity {
 
 
     }
-    public void getFriends(final String t){
+    public void getWords(final String t){
         class UserLoginTask extends AsyncTask<String, Void, String> {
 
             @Override
@@ -234,15 +234,7 @@ public class MainActivity extends Activity {
                 String s1 = (findcov(myJSON));
                 if(myJSON != null)
                 {
-                    btn1.setVisibility(View.VISIBLE);
-                    btn1.setText(ms[0]);
-                    btn2.setVisibility(View.VISIBLE);
-                    btn2.setText(ms[1]);
-                    btn3.setVisibility(View.VISIBLE);
-                    btn3.setText(ms[2]);
-                    check(btn1);
-                    check(btn2);
-                    check(btn3);
+                    setButton();
                 }
             }
 
@@ -295,6 +287,17 @@ public class MainActivity extends Activity {
     public void Clear(View view){
         searchText.setText("");
     }
+    public void setButton(){
+        btn1.setVisibility(View.VISIBLE);
+        btn1.setText(ms[0]);
+        btn2.setVisibility(View.VISIBLE);
+        btn2.setText(ms[1]);
+        btn3.setVisibility(View.VISIBLE);
+        btn3.setText(ms[2]);
+        check(btn1);
+        check(btn2);
+        check(btn3);
+    }
     public native String stringFromJNI();
     public native String foo(String json);
     public native String fo(String json, int q);
@@ -306,4 +309,6 @@ public class MainActivity extends Activity {
 }
 
 //
+
+
 
