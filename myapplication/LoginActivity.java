@@ -3,8 +3,13 @@ package com.example.myapplication;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -12,7 +17,7 @@ import android.app.LoaderManager.LoaderCallbacks;
 
 import android.content.CursorLoader;
 import android.content.Loader;
-import android.database.Cursor;
+
 import android.net.Uri;
 import android.os.AsyncTask;
 
@@ -29,6 +34,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -50,23 +56,27 @@ import static android.Manifest.permission.READ_CONTACTS;
  */
 public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
-
+    CheckBox checkBox;
+    boolean isData = false;
+    String user, pass;
     /**
      * Id to identity READ_CONTACTS permission request.
      */
+    private String LOG_TAG = "mylogs";
     private static final int REQUEST_READ_CONTACTS = 0;
     private Button reg;
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
-
+    private DBHelper dbHelper;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
-
+        dbHelper = new DBHelper(this);
+        checkBox = (CheckBox)findViewById(R.id.checkBox);
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
 
@@ -86,7 +96,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
+                //if(!isData)
                 attemptLogin();
+
             }
         });
         reg = (Button) findViewById(R.id.registration);
@@ -98,6 +110,46 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         });
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+        check();
+    }
+    private void check(){
+        //ContentValues cv = new ContentValues();
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        // делаем запрос всех данных из таблицы mytable, получаем Cursor
+        Cursor c = db.query("mytable", null, null, null, null, null, null);
+
+        // ставим позицию курсора на первую строку выборки
+        // если в выборке нет строк, вернется false
+        if (c.moveToFirst()) {
+
+            // определяем номера столбцов по имени в выборке
+            int idColIndex = c.getColumnIndex("id");
+            int nameColIndex = c.getColumnIndex("email");
+            int emailColIndex = c.getColumnIndex("pass");
+
+            do {
+                // получаем значения по номерам столбцов и пишем все в лог
+                Log.d(LOG_TAG,
+                        "ID = " + c.getInt(idColIndex) +
+                                ", email = " + c.getString(nameColIndex) +
+                                ", pass = " + c.getString(emailColIndex));
+                mEmailView.setText(c.getString(nameColIndex));
+                mPasswordView.setText(c.getString(emailColIndex));
+                user = c.getString(nameColIndex);
+                pass = c.getString(emailColIndex);
+                checkBox.setVisibility(View.GONE);
+                // переход на следующую строку
+                // а если следующей нет (текущая - последняя), то false - выходим из цикла
+                isData = true;
+            } while (c.moveToNext());
+        }  else{
+            isData = false;
+            Log.d(LOG_TAG, "0 rows");
+
+        }
+
+            c.close();
+
     }
 
     private void populateAutoComplete() {
@@ -147,7 +199,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(address));
         startActivity(intent);
-        finish();
+        //finish();
     }
     private void attemptLogin() {
 
@@ -185,6 +237,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // form field with an error.
             focusView.requestFocus();
         } else {
+
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
@@ -295,80 +348,117 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * the user.
      */
     public void checklogin(final String email, final String password) {
+        if(isData && email.equals(user) && password.equals(pass)){
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            intent.putExtra("username", email);
+            intent.putExtra("password", password);
+            startActivity(intent);
+            finish();
+        }
+        else{
+            class UserLoginTask extends AsyncTask<String, Void, String>  {
 
-        class UserLoginTask extends AsyncTask<String, Void, String> {
-
-            private final String mEmail = email;
-            private final String mPassword = password;
+                private final String mEmail = email;
+                private final String mPassword = password;
 
             /*UserLoginTask(String email, String password) {
                 mEmail = email;
                 mPassword = password;
             }*/
 
-            @Override
-            protected String doInBackground(String... params)  {
-                Response response = null;
-                // TODO: attempt authentication against a network service.
-                //Intent intent = new Intent();
-                //startActivity(intent);
-                try {
-                    OkHttpClient client = new OkHttpClient();
+                @Override
+                protected String doInBackground(String... params)  {
+                    Response response = null;
+                    // TODO: attempt authentication against a network service.
+                    //Intent intent = new Intent();
+                    //startActivity(intent);
+                    try {
+                        OkHttpClient client = new OkHttpClient();
 
-                    FormBody.Builder formBuilder = new FormBody.Builder()
-                            .add("username", mEmail)
-                            .add("password", mPassword);
-                    Log.i("userrr", mEmail);
-                    Log.i("passs", mPassword);
-                    RequestBody formBody = formBuilder.build();
-                    Request request = new Request.Builder()
-                            .url("http://sakhipych.esy.es/head.php")
-                            .post(formBody)
-                            .build();
+                        FormBody.Builder formBuilder = new FormBody.Builder()
+                                .add("username", mEmail)
+                                .add("password", mPassword);
+                        Log.i("userrr", mEmail);
+                        Log.i("passs", mPassword);
+                        RequestBody formBody = formBuilder.build();
+                        Request request = new Request.Builder()
+                                .url("http://sakhipych.esy.es/head.php")
+                                .post(formBody)
+                                .build();
 
-                    response = client.newCall(request).execute();
-                    Log.i("userrr", mEmail);
-                    Log.i("passs", mPassword);
-                    return response.body().string();
-                   // Log.i("resultik", response.body().string());
-                } catch (IOException e) {
-                    e.printStackTrace();
+                        response = client.newCall(request).execute();
+                        Log.i("userrr", mEmail);
+                        Log.i("passs", mPassword);
+                        return response.body().string();
+                        // Log.i("resultik", response.body().string());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    String s = null;
+                    try {
+                        s = response.body().string();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    return s;
                 }
-                String s = null;
-                try {
-                    s = response.body().string();
-                } catch (IOException e) {
-                    e.printStackTrace();
+
+                @Override
+                protected void onPostExecute(String s) {
+                    // mAuthTask = null;
+                    showProgress(false);
+                    if (s.trim().equals("success")) {
+                        if(!isData && checkBox.isChecked()){
+                            ContentValues cv = new ContentValues();
+                            SQLiteDatabase db = dbHelper.getWritableDatabase();
+                            cv.put("email", email);
+                            cv.put("pass", password);
+                            long rowID = db.insert("mytable", null, cv);
+                        }
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        intent.putExtra("username", email);
+                        intent.putExtra("password", password);
+                        startActivity(intent);
+                        finish();
+                    } else {
+                        mPasswordView.setError(getString(R.string.error_incorrect_password));
+                        mPasswordView.requestFocus();
+                    }
                 }
 
-                return s;
-            }
-
-            @Override
-            protected void onPostExecute(String s) {
-                // mAuthTask = null;
-                showProgress(false);
-                if (s.trim().equals("success")) {
-
-                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                    intent.putExtra("username", email);
-                    intent.putExtra("password", password);
-                    startActivity(intent);
-                    finish();
-                } else {
-                    mPasswordView.setError(getString(R.string.error_incorrect_password));
-                    mPasswordView.requestFocus();
+                @Override
+                protected void onCancelled() {
+                    // mAuthTask = null;
+                    showProgress(false);
                 }
             }
-
-            @Override
-            protected void onCancelled() {
-                // mAuthTask = null;
-                showProgress(false);
-            }
+            UserLoginTask userLoginTask = new UserLoginTask();
+            userLoginTask.execute();
         }
-        UserLoginTask userLoginTask = new UserLoginTask();
-        userLoginTask.execute();
+
+    }
+    class DBHelper extends SQLiteOpenHelper {
+
+        public DBHelper(Context context) {
+            // конструктор суперкласса
+            super(context, "myDB", null, 1);
+        }
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            Log.d(LOG_TAG, "--- onCreate database ---");
+            // создаем таблицу с полями
+            db.execSQL("create table mytable ("
+                    + "id integer primary key autoincrement,"
+                    + "email text,"
+                    + "pass text" + ");");
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+        }
     }
 }
 

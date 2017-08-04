@@ -18,9 +18,11 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,7 +36,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
     ProgressDialog progress;
     String strr = "";
     String myJSON;
@@ -47,12 +49,15 @@ public class MainActivity extends Activity {
     TextView showFrie;
     Button getFrie;
     Button showMap;
+    Button btnSearch;
     private LocationManager locationManager;
     StringBuilder sbGPS = new StringBuilder();
     StringBuilder sbNet = new StringBuilder();
     String email, password;
     double curLon;
     double curLat;
+    String curTime;
+    Button btnRequest;
     private String arrayFriends[] = new String[10000];
     private double arrayLat[] = new double[10000];
     private double arrayLon[] = new double[10000];
@@ -62,7 +67,27 @@ public class MainActivity extends Activity {
         setContentView(R.layout.main);
         Intent intent = getIntent();
         email = intent.getStringExtra("username");
+        setTitle(email);
         password = intent.getStringExtra("password");
+        btnSearch = (Button)findViewById(R.id.button4);
+        btnRequest = (Button)findViewById(R.id.button5);
+
+        btnSearch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
+                intent.putExtra("email", email);
+                startActivity(intent);
+            }
+        });
+        btnRequest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, RequestActivity.class);
+                intent.putExtra("email", email);
+                startActivity(intent);
+            }
+        });
         tvEnabledGPS = (TextView) findViewById(R.id.tvEnabledGPS);
         tvStatusGPS = (TextView) findViewById(R.id.tvStatusGPS);
         tvLocationGPS = (TextView) findViewById(R.id.tvLocationGPS);
@@ -75,14 +100,17 @@ public class MainActivity extends Activity {
         getFrie.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getFriends(email);
+                //getFriends(email);
+                Intent intent = new Intent(MainActivity.this, FriendsActivity.class);
+                intent.putExtra("email", email);
+                startActivity(intent);
             }
         });
         showMap = (Button) findViewById(R.id.showMap);
         showMap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getFriends(email);
+
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
                 intent.putExtra("arrayFriends", arrayFriends);
                 intent.putExtra("arrayLat", arrayLat);
@@ -90,34 +118,35 @@ public class MainActivity extends Activity {
                 startActivity(intent);
             }
         });
+        getFriends(email);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
+        @Override
+        protected void onResume() {
+            super.onResume();
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    1000 * 10, 10, locationListener);
+            locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, 1000 * 10, 10,
+                    locationListener);
+            checkEnabled();
         }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                1000 * 10, 10, locationListener);
-        locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER, 1000 * 10, 10,
-                locationListener);
-        checkEnabled();
-    }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        locationManager.removeUpdates(locationListener);
-    }
+        @Override
+        protected void onPause() {
+            super.onPause();
+            locationManager.removeUpdates(locationListener);
+        }
 
     private LocationListener locationListener = new LocationListener() {
 
@@ -157,8 +186,19 @@ public class MainActivity extends Activity {
         }
         curLat = location.getLatitude();
         curLon = location.getLongitude();
-        sendCoord(curLat, curLon, email);
-        Toast.makeText(getApplicationContext(), "Координаты обновлены", Toast.LENGTH_SHORT);
+        //curTime = location.getTime();
+        curTime = String.format(
+                "Coordinates: lat = %1$.8f, lon = %2$.8f, time = %3$tF %3$tT",
+                location.getLatitude(), location.getLongitude(), new Date(
+                        location.getTime()));
+        int q = curTime.indexOf("time");
+        StringBuffer sb = new StringBuffer(curTime);
+        sb.delete(0, q+7);
+//        Toast toast = Toast.makeText(getApplicationContext(), sb, Toast.LENGTH_SHORT);
+//        toast.show();
+        sendCoord(curLat, curLon, email, sb.toString());
+       // Toast.makeText(getApplicationContext(), "Координаты обновлены", Toast.LENGTH_SHORT);
+
     }
 
     private String formatLocation(Location location) {
@@ -200,12 +240,13 @@ public class MainActivity extends Activity {
                     String lat1 = c.getString("lat");
                     l = 5;
                     String lon1 = c.getString("lon");
+                    String time1 = c.getString("time");
                     arrayFriends[j] = name1 + " " + lastname1;
                     arrayLat[j] = Double.valueOf(lat1);
                     arrayLon[j] = Double.valueOf(lon1);
                     j++;
                     l = 6;
-                    String str = name1 + " " + lastname1 + " " + lat1 + " " + lon1 + " "  + "\n";
+                    String str = name1 + " " + lastname1 + " " + lat1 + " " + lon1 + " " + time1 + "\n";
 
 
                     s1 = strr + str;
@@ -213,7 +254,9 @@ public class MainActivity extends Activity {
                     Log.i("LOG_TAG", "str: " + str + " strr: " + strr);
                 }
 
-                showFrie.setText(strr);
+                showFrie.setText("");
+                Toast toast = Toast.makeText(getApplicationContext(), "Список друзей обновлён", Toast.LENGTH_SHORT);
+                toast.show();
                 strr = "";
 
             }
@@ -293,7 +336,7 @@ public class MainActivity extends Activity {
         UserLoginTask userLoginTask = new UserLoginTask();
         userLoginTask.execute();
     }
-    public void sendCoord(final double d1, final double d2, final String user){
+    public void sendCoord(final double d1, final double d2, final String user, final String time){
         class Sending extends AsyncTask<String, Void, String> {
             String s1 = String.valueOf(d1);
             String s2 = String.valueOf(d2);
@@ -311,6 +354,7 @@ public class MainActivity extends Activity {
                             .add("login", mEmail)
                             .add("lat", s1)
                             .add("lon", s2)
+                            .add("time", time)
                             ;
                     //Log.i("userrr", mEmail);
                     //Log.i("passs", mPassword);
@@ -361,5 +405,10 @@ public class MainActivity extends Activity {
         startActivity(new Intent(
                 android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
     };
-
+    public void onClickStart(View v) {
+        startService(new Intent(this, MyService.class).putExtra("email", email));
+    }
+    public void onClickStop(View v) {
+        stopService(new Intent(this, MyService.class));
+    }
 }
