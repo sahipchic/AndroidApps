@@ -176,6 +176,12 @@ public class FriendsActivity extends AppCompatActivity {
         UserLoginTask userLoginTask = new UserLoginTask();
         userLoginTask.execute();
     }
+    private void goDialog(final String friendLogin){
+        Intent intent = new Intent(FriendsActivity.this, DialogActivity.class);
+        intent.putExtra(friendLogin, "friend");
+        intent.putExtra(email, "login");
+        startActivity(intent);
+    }
     private void showList(){
 
         int l=0;
@@ -212,12 +218,17 @@ public class FriendsActivity extends AppCompatActivity {
                     panel.setOrientation(LinearLayout.HORIZONTAL);
                     final TextView tw = new TextView(FriendsActivity.this);
                     final Button btn = new Button(FriendsActivity.this);
+                    final Button dialogBtn = new Button(FriendsActivity.this);
                     tw.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
                             LinearLayout.LayoutParams.MATCH_PARENT, 0.5f));
                     btn.setTextColor(Color.WHITE);
+                    dialogBtn.setTextColor(Color.WHITE);
                     tw.setTextColor(Color.BLACK);
                     btn.setBackgroundColor(Color.BLACK);
                     btn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.MATCH_PARENT, 1f));
+                    dialogBtn.setBackgroundColor(Color.BLACK);
+                    dialogBtn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
                             LinearLayout.LayoutParams.MATCH_PARENT, 1f));
                     tw.setText(str);
                     btn.setText("Удалить");
@@ -228,8 +239,16 @@ public class FriendsActivity extends AppCompatActivity {
                             tw.setText("");
                         }
                     });
+                    dialogBtn.setText("Диалог");
+                    dialogBtn.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            goDialog(login1);
+                        }
+                    });
                     panel.addView(tw);
                     panel.addView(btn);
+                    panel.addView(dialogBtn);
                     ppanel.addView(panel);
 
                 }

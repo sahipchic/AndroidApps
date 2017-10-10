@@ -1,7 +1,11 @@
 package com.example.myapplication;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
@@ -9,8 +13,10 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ServiceCompat;
 import android.support.v4.content.ContextCompat;
@@ -33,14 +39,38 @@ public class MyService extends Service {
     double curLat, curLon;
     String curTime;
     LocationManager locationManager;
+
     public MyService() {
+
     }
-
+    long e;
     final String LOG_TAG = "myLogs";
-
+    @Override
     public void onCreate() {
         super.onCreate();
+
         Log.d(LOG_TAG, "onCreate");
+
+    }
+
+    //@RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+
+        e = System.currentTimeMillis();
+        Log.d(LOG_TAG, "onStartCommand");
+        email = intent.getStringExtra("email");
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                0, 0, locationListener);
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                    0, 0, locationListener);
+        //someTask();
+        //return super.onStartCommand(intent, flags, startId);
+
+
+        return START_STICKY;
     }
 
     private LocationListener locationListener = new LocationListener() {
@@ -70,14 +100,21 @@ public class MyService extends Service {
             }
         }
     };
-
+    String gn;
     private void showLocation(Location location) {
+        long e1 = System.currentTimeMillis();
+       // if(e1 - e > 10000){
+            //Intent restartIntent = new Intent(this, getClass());
+         //   startService(new Intent(this, MyService.class).putExtra("email", email));
+        //}
         if (location == null)
             return;
         if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
+            gn = "gps";
             //tvLocationGPS.setText(formatLocation(location));
         } else if (location.getProvider().equals(LocationManager.NETWORK_PROVIDER)) {
             //tvLocationNet.setText(formatLocation(location));
+            gn = "nw";
         }
         curLat = location.getLatitude();
         curLon = location.getLongitude();
@@ -105,13 +142,7 @@ public class MyService extends Service {
 //                .isProviderEnabled(LocationManager.NETWORK_PROVIDER));
     }
 
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(LOG_TAG, "onStartCommand");
-        email = intent.getStringExtra("email");
 
-        someTask();
-        return super.onStartCommand(intent, flags, startId);
-    }
 
     public void onDestroy() {
         super.onDestroy();
@@ -123,7 +154,10 @@ public class MyService extends Service {
         // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
-
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        Log.i("Test", "Service: onTaskRemoved");
+    }
 
     void someTask() {
         new Thread(new Runnable() {
@@ -220,8 +254,8 @@ public class MyService extends Service {
             protected void onPostExecute(String s) {
                 // progress.dismiss();
                 if(s.trim().equals("success")){
-                    Toast.makeText(getApplicationContext(), "Your coordinates are updated", Toast.LENGTH_SHORT);
-                    Log.d(LOG_TAG, "updated");
+                   // Toast.makeText(getApplicationContext(), "Your coordinates are updated", Toast.LENGTH_SHORT);
+                    Log.d(LOG_TAG, "updated" + gn);
                 }
 
             }

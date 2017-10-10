@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:id="@+id/linlay"
+    android:padding="5dp"
+    android:layout_height="match_parent">
+
+    <EditText
+        android:id="@+id/editText2"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#e4e2e2"
+        android:ems="10"
+        android:hint="Имя"
+        android:inputType="textEmailAddress"
+        android:textColor="#000"
+        android:textSize="25dp" />
+    <EditText
+        android:id="@+id/editText3"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#e4e2e2"
+        android:ems="10"
+        android:hint="Фамилия"
+        android:inputType="textEmailAddress"
+        android:textColor="#000"
+        android:textSize="25dp" />
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Поиск" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:textSize="25dp" />
+
+    <Button
+        android:id="@+id/button3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Добавить в друзья"
+        android:visibility="invisible" />
+</LinearLayout>

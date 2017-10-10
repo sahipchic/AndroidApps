@@ -195,11 +195,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         }
     }
     private void Registration(){
-        String address = "http://sakhipych.esy.es/qqq.php";
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse(address));
-        startActivity(intent);
+//        String address = "http://sakhipych.esy.es/qqq.php";
+//        Intent intent = new Intent(Intent.ACTION_VIEW);
+//        intent.setData(Uri.parse(address));
+//        startActivity(intent);
         //finish();
+        Intent intent = new Intent(LoginActivity.this, RegistrationActivity.class);
+        startActivity(intent);
     }
     private void attemptLogin() {
 
@@ -246,7 +248,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private boolean isEmailValid(String email) {
-        return email.contains("@");
+        return email.length() > 2;
     }
 
     private boolean isPasswordValid(String password) {
